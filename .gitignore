@@ -3,5 +3,4 @@ node_modules/
 assets/
 website/
 index.html
-rollup.config.js
 package-lock.json
