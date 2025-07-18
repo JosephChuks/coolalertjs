@@ -1,5 +1,5 @@
 /*!
- * coolalertjs v1.0.0
+ * coolalertjs v1.0.1
  * URLs https://coolalertjs.com
  * (c) 2025 Joseph Chuks
  * Released under the ISC License.
