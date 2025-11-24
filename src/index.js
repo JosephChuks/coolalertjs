@@ -38,6 +38,7 @@ class CoolAlert {
       text: "rgba(255, 255, 255, 0.9)",
       title: "rgba(255, 255, 255, 0.9)",
       close: "rgba(255, 255, 255, 0.7)",
+      toastBackground: "#1e1e1e",
     };
 
     document.addEventListener("keydown", (e) => {
@@ -83,7 +84,9 @@ class CoolAlert {
     div.id = "cool-alert-" + data.icon;
 
     div.innerHTML = `
-                    <div class="cool-alert-js cool-alert-modal cool-alert-${data.icon}">
+                    <div class="cool-alert-js cool-alert-modal cool-alert-${
+                      data.icon
+                    }">
                         <div class="cool-alert-modal-header"></div>
                         ${
                           !closeBtn
@@ -142,19 +145,28 @@ class CoolAlert {
                     </div>
                 `;
 
+    // FIXED: Use direct button event listeners instead of event delegation
     div.addEventListener("click", (e) => {
-      e.stopPropagation();
-
-      const action = e.target.dataset.action;
-      if (action) {
-        this.handleModalAction(action, data);
-      } else if (e.target === div) {
+      if (e.target === div) {
         this.handleModalAction("dismiss", data);
       }
     });
 
+    // Attach button listeners directly after DOM insertion
     setTimeout(() => {
       document.body.appendChild(div);
+
+      // FIXED: Attach event listeners directly to buttons to survive translation
+      const modal = div.querySelector(".cool-alert-modal");
+
+      modal.querySelectorAll("[data-action]").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const action = e.currentTarget.getAttribute("data-action");
+          this.handleModalAction(action, data);
+        });
+      });
+
       if (data.draggable) this.initializeDrag();
       this.addRippleEffect();
     }, 100);
@@ -192,20 +204,26 @@ class CoolAlert {
                     </div>
                 `;
 
+    // FIXED: Use direct button event listeners
     div.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const action = e.target.dataset.action;
-      if (action === "confirm") {
-        this.closeModal();
-      } else if (e.target === div) {
+      if (e.target === div) {
         this.closeModal();
       }
     });
 
     setTimeout(() => {
       document.body.appendChild(div);
+
+      // FIXED: Attach event listeners directly to buttons
+      const confirmBtn = div.querySelector("[data-action='confirm']");
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.closeModal();
+        });
+      }
+
       this.addRippleEffect();
     }, 100);
   }
@@ -216,7 +234,9 @@ class CoolAlert {
     div.id = "cool-alert-" + data.icon;
 
     div.innerHTML = `
-                    <div class="cool-alert-js cool-alert-modal cool-alert-${data.icon}">
+                    <div class="cool-alert-js cool-alert-modal cool-alert-${
+                      data.icon
+                    }">
                         <div class="cool-alert-modal-header"></div>
                         <button class="cool-alert-close" data-action="dismiss">&times;</button>
                         <div class="cool-alert-modal-icon">${this.getIcon(
@@ -237,15 +257,9 @@ class CoolAlert {
                     </div>
                 `;
 
+    // FIXED: Use direct button event listeners
     div.addEventListener("click", (e) => {
-      e.stopPropagation();
-
-      const action = e.target.dataset.action;
-      if (action === "preconfirm") {
-        this.handlePreConfirm(e.target, data);
-      } else if (action) {
-        this.handleModalAction(action, data);
-      } else if (
+      if (
         e.target === div &&
         (!data.allowOutsideClick || data.allowOutsideClick())
       ) {
@@ -255,6 +269,28 @@ class CoolAlert {
 
     setTimeout(() => {
       document.body.appendChild(div);
+
+      // FIXED: Attach event listeners directly to buttons
+      const modal = div.querySelector(".cool-alert-modal");
+
+      const preconfirmBtn = modal.querySelector("[data-action='preconfirm']");
+      if (preconfirmBtn) {
+        preconfirmBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.handlePreConfirm(e.currentTarget, data);
+        });
+      }
+
+      modal
+        .querySelectorAll("[data-action]:not([data-action='preconfirm'])")
+        .forEach((button) => {
+          button.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const action = e.currentTarget.getAttribute("data-action");
+            this.handleModalAction(action, data);
+          });
+        });
+
       if (data.draggable) this.initializeDrag();
       this.addRippleEffect();
     }, 100);
@@ -400,19 +436,21 @@ class CoolAlert {
     toast.innerHTML = `
                     <div class="cool-alert-toast-icon">${config.icon}</div>
                     <div class="cool-alert-toast-content">
-                        <div class="cool-alert-toast-title">${
-                          title || ""
-                        }</div>
+                        <div class="cool-alert-toast-title">${title || ""}</div>
                         <div class="cool-alert-toast-message">${
                           text || config.message
                         }</div>
                     </div>
-                    <button class="cool-alert-toast-close" onclick="CoolAlert.closeToast('${toastId}')">&times;</button>
+                    <button class="cool-alert-toast-close">&times;</button>
                     <div class="cool-alert-toast-progress"></div>
                 `;
 
     const container = document.getElementById("cool-alert-toast-container");
     container.appendChild(toast);
+
+    // FIXED: Use direct event listener instead of inline onclick
+    const closeBtn = toast.querySelector(".cool-alert-toast-close");
+    closeBtn.addEventListener("click", () => this.closeToast(toastId));
 
     setTimeout(() => toast.classList.add("show"), 10);
 
