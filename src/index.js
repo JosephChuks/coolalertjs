@@ -1,11 +1,6 @@
 import css from "./styles.css";
 
 class CoolAlert {
-  /**
-   * @param {Object} [custom]  Optional overrides for the CSS variables.
-   *
-   */
-
   static dragData = {
     isDragging: false,
     startX: 0,
@@ -26,7 +21,7 @@ class CoolAlert {
     if (document.getElementById("cool-alert-styles")) return;
 
     const defaults = {
-      overlay: "rgba(0, 0, 0, 0.3)",
+      overlay: "rgba(0, 0, 0, 0.35)",
       background: "#011627",
       primary: "#6c5ce7",
       secondary: "rgba(255, 255, 255, 0.1)",
@@ -80,7 +75,7 @@ class CoolAlert {
     const denyBtn = data.showDenyButton ?? false;
 
     const div = document.createElement("div");
-    div.classList.add("cool-alert-modal-overlay", "active");
+    div.classList.add("cool-alert-modal-overlay");
     div.id = "cool-alert-" + data.icon;
 
     div.innerHTML = `
@@ -145,42 +140,38 @@ class CoolAlert {
                     </div>
                 `;
 
-    // FIXED: Use direct button event listeners instead of event delegation
     div.addEventListener("click", (e) => {
       if (e.target === div) {
         this.handleModalAction("dismiss", data);
       }
     });
 
-    // Attach button listeners directly after DOM insertion
-    setTimeout(() => {
-      document.body.appendChild(div);
+    document.body.appendChild(div);
 
-      // FIXED: Attach event listeners directly to buttons to survive translation
-      const modal = div.querySelector(".cool-alert-modal");
-
-      modal.querySelectorAll("[data-action]").forEach((button) => {
-        button.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const action = e.currentTarget.getAttribute("data-action");
-          this.handleModalAction(action, data);
-        });
+    const modal = div.querySelector(".cool-alert-modal");
+    modal.querySelectorAll("[data-action]").forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = e.currentTarget.getAttribute("data-action");
+        this.handleModalAction(action, data);
       });
+    });
 
-      if (data.draggable) this.initializeDrag();
-      this.addRippleEffect();
-    }, 100);
+    if (data.draggable) this.initializeDrag();
+    this.addRippleEffect();
+
+    requestAnimationFrame(() => requestAnimationFrame(() => div.classList.add("active")));
   }
 
   static showBasicModal(title, text = null, icon = null) {
     const div = document.createElement("div");
-    div.classList.add("cool-alert-modal-overlay", "active");
+    div.classList.add("cool-alert-modal-overlay");
     div.innerHTML = `
                     <div class="cool-alert-js cool-alert-modal cool-alert-${
                       icon === null ? "info" : icon.toLowerCase()
                     }">
                         <div class="cool-alert-modal-header"></div>
-                        
+
                         ${
                           icon === null || icon === ""
                             ? ""
@@ -204,33 +195,31 @@ class CoolAlert {
                     </div>
                 `;
 
-    // FIXED: Use direct button event listeners
     div.addEventListener("click", (e) => {
       if (e.target === div) {
         this.closeModal();
       }
     });
 
-    setTimeout(() => {
-      document.body.appendChild(div);
+    document.body.appendChild(div);
 
-      // FIXED: Attach event listeners directly to buttons
-      const confirmBtn = div.querySelector("[data-action='confirm']");
-      if (confirmBtn) {
-        confirmBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          this.closeModal();
-        });
-      }
+    const confirmBtn = div.querySelector("[data-action='confirm']");
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeModal();
+      });
+    }
 
-      this.addRippleEffect();
-    }, 100);
+    this.addRippleEffect();
+
+    requestAnimationFrame(() => requestAnimationFrame(() => div.classList.add("active")));
   }
 
   static showPreConfirmModal(data) {
     const div = document.createElement("div");
-    div.classList.add("cool-alert-modal-overlay", "active");
+    div.classList.add("cool-alert-modal-overlay");
     div.id = "cool-alert-" + data.icon;
 
     div.innerHTML = `
@@ -257,7 +246,6 @@ class CoolAlert {
                     </div>
                 `;
 
-    // FIXED: Use direct button event listeners
     div.addEventListener("click", (e) => {
       if (
         e.target === div &&
@@ -267,33 +255,32 @@ class CoolAlert {
       }
     });
 
-    setTimeout(() => {
-      document.body.appendChild(div);
+    document.body.appendChild(div);
 
-      // FIXED: Attach event listeners directly to buttons
-      const modal = div.querySelector(".cool-alert-modal");
+    const modal = div.querySelector(".cool-alert-modal");
 
-      const preconfirmBtn = modal.querySelector("[data-action='preconfirm']");
-      if (preconfirmBtn) {
-        preconfirmBtn.addEventListener("click", (e) => {
+    const preconfirmBtn = modal.querySelector("[data-action='preconfirm']");
+    if (preconfirmBtn) {
+      preconfirmBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.handlePreConfirm(e.currentTarget, data);
+      });
+    }
+
+    modal
+      .querySelectorAll("[data-action]:not([data-action='preconfirm'])")
+      .forEach((button) => {
+        button.addEventListener("click", (e) => {
           e.stopPropagation();
-          this.handlePreConfirm(e.currentTarget, data);
+          const action = e.currentTarget.getAttribute("data-action");
+          this.handleModalAction(action, data);
         });
-      }
+      });
 
-      modal
-        .querySelectorAll("[data-action]:not([data-action='preconfirm'])")
-        .forEach((button) => {
-          button.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const action = e.currentTarget.getAttribute("data-action");
-            this.handleModalAction(action, data);
-          });
-        });
+    if (data.draggable) this.initializeDrag();
+    this.addRippleEffect();
 
-      if (data.draggable) this.initializeDrag();
-      this.addRippleEffect();
-    }, 100);
+    requestAnimationFrame(() => requestAnimationFrame(() => div.classList.add("active")));
   }
 
   static async handlePreConfirm(button, data) {
@@ -376,9 +363,9 @@ class CoolAlert {
   }
 
   static closeModal() {
-    const modal = document.querySelector(".cool-alert-modal-overlay");
-    if (modal) {
-      modal.classList.remove("active");
+    const overlay = document.querySelector(".cool-alert-modal-overlay");
+    if (overlay) {
+      overlay.classList.remove("active");
       document.body.style.overflow = "auto";
 
       if (this.currentPromise) {
@@ -386,45 +373,27 @@ class CoolAlert {
       }
 
       setTimeout(() => {
-        if (modal.parentNode) {
-          modal.parentNode.removeChild(modal);
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
         }
-      }, 100);
+      }, 350);
     }
   }
 
   static isLoading() {
-    const loadingBtn = document.querySelector(
-      ".cool-alert-modal-btn.cool-alert-loading"
-    );
-    return !!loadingBtn;
+    return !!document.querySelector(".cool-alert-modal-btn.cool-alert-loading");
   }
 
   static showToast(type, title, text, duration = 3000) {
-    const toastConfig = {
-      success: {
-        icon: "✓",
-        message: "Action completed successfully.",
-      },
-      error: {
-        icon: "✕",
-        message: "Something went wrong. Please try again.",
-      },
-      warning: {
-        icon: "⚠",
-        message: "Please review your action carefully.",
-      },
-      info: {
-        icon: "ℹ",
-        message: "Here's some important information for you.",
-      },
-      question: {
-        icon: "?",
-        message: "Do you want to proceed?",
-      },
+    const toastDefaults = {
+      success: { message: "Action completed successfully." },
+      error:   { message: "Something went wrong. Please try again." },
+      warning: { message: "Please review your action carefully." },
+      info:    { message: "Here's some important information for you." },
+      question:{ message: "Do you want to proceed?" },
     };
 
-    const config = toastConfig[type];
+    const config = toastDefaults[type] || toastDefaults.info;
     const toastId = `cool-alert-toast-${Date.now()}-${Math.random()
       .toString(36)
       .substr(2, 9)}`;
@@ -434,7 +403,7 @@ class CoolAlert {
     toast.id = toastId;
 
     toast.innerHTML = `
-                    <div class="cool-alert-toast-icon">${config.icon}</div>
+                    <div class="cool-alert-toast-icon">${this.getIcon(type)}</div>
                     <div class="cool-alert-toast-content">
                         <div class="cool-alert-toast-title">${title || ""}</div>
                         <div class="cool-alert-toast-message">${
@@ -448,11 +417,10 @@ class CoolAlert {
     const container = document.getElementById("cool-alert-toast-container");
     container.appendChild(toast);
 
-    // FIXED: Use direct event listener instead of inline onclick
     const closeBtn = toast.querySelector(".cool-alert-toast-close");
     closeBtn.addEventListener("click", () => this.closeToast(toastId));
 
-    setTimeout(() => toast.classList.add("show"), 10);
+    setTimeout(() => toast.classList.add("show"), 16);
 
     const progressBar = toast.querySelector(".cool-alert-toast-progress");
     setTimeout(() => {
@@ -468,7 +436,7 @@ class CoolAlert {
     toast.autoRemoveTimer = autoRemoveTimer;
 
     toast.addEventListener("mouseenter", () => {
-      clearTimeout(autoRemoveTimer);
+      clearTimeout(toast.autoRemoveTimer);
       progressBar.style.animationPlayState = "paused";
     });
 
@@ -504,13 +472,13 @@ class CoolAlert {
 
   static getIcon(type) {
     const icons = {
-      success: "✓",
-      error: "✕",
-      warning: "⚠",
-      info: "ℹ",
-      question: "?",
+      success: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+      error:   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+      warning: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+      info:    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
+      question:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
     };
-    return icons[type] || "ℹ";
+    return icons[type] || icons.info;
   }
 
   static initializeDrag() {
@@ -570,7 +538,7 @@ class CoolAlert {
     const constrainedX = Math.max(-maxX, Math.min(maxX, newX));
     const constrainedY = Math.max(-maxY, Math.min(maxY, newY));
 
-    this.dragData.currentModal.style.transform = `translate(${constrainedX}px, ${constrainedY}px) scale(1.05)`;
+    this.dragData.currentModal.style.transform = `translate(${constrainedX}px, ${constrainedY}px) scale(1.03)`;
   }
 
   static stopDrag() {
@@ -610,7 +578,7 @@ class CoolAlert {
                             border-radius: 50%;
                             background: rgba(255, 255, 255, 0.3);
                             transform: scale(0);
-                            animation: ripple-effect 0.6s linear;
+                            animation: ripple-effect 0.55s ease-out;
                             left: ${x}px;
                             top: ${y}px;
                             width: ${size}px;
@@ -622,7 +590,7 @@ class CoolAlert {
         this.style.overflow = "hidden";
         this.appendChild(ripple);
 
-        setTimeout(() => ripple.remove(), 600);
+        setTimeout(() => ripple.remove(), 560);
       });
     });
   }
